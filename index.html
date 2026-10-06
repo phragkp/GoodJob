@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>การวิเคราะห์ปัจจัยและการพยากรณ์ความรุนแรงของอุบัติเหตุทางถนนในประเทศไทย</title>
+    <!-- นำเข้าฟอนต์ Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js สำหรับวาดกราฟ Dashboard และ Line Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary: #1E293B;
+            --secondary: #0284C7;
+            --accent: #E11D48;
+            --bg-light: #F8FAFC;
+            --text-dark: #334155;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Top Bar Styling */
+        .top-bar {
+            background-color: var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            color: var(--white);
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #94A3B8;
+            text-decoration: none;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--white);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Hero / Header Title Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary) 0%, #0F172A 100%);
+            color: var(--white);
+            text-align: center;
+            padding: 3.5rem 1.5rem;
+            border-bottom: 4px solid var(--secondary);
+        }
+
+        .hero-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: #94A3B8;
+            font-weight: 300;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Section Components */
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 1.6rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 3px;
+            background-color: var(--secondary);
+            margin: 0.5rem auto 0;
+            border-radius: 2px;
+        }
+
+        /* Background & Problem Section */
+        .bg-problem-section {
+            padding: 2rem 1.5rem;
+            background-color: #F8FAFC;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .problem-card {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .problem-icon {
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .problem-card h3 {
+            color: var(--primary);
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .problem-card p {
+            color: #64748B;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Objectives Section Styling */
+        .objectives-section {
+            padding: 2.5rem 1.5rem;
+            background-color: var(--white);
+            border-top: 1px solid #E2E8F0;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .objectives-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .obj-card {
+            background: #F8FAFC;
+            padding: 1.75rem 1.25rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--secondary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .obj-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .obj-card h3 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .obj-card p {
+            color: #64748B;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* CRISP-DM Process Grid */
+        .crisp-section {
+            padding: 2.5rem 1.5rem;
+            background-color: #F8FAFC;
+        }
+
+        .crisp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .crisp-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border: 1px solid #E2E8F0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .crisp-step {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .crisp-card h3 {
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin: 0.25rem 0 0.5rem 0;
+        }
+
+        .crisp-card p {
+            color: #64748B;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Modal Pop-up Styling (ผู้จัดทำ) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-container {
+            background-color: var(--white);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 650px;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748B;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--accent);
+        }
+
+        .team-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .team-card {
+            background: #F8FAFC;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            text-align: center;
+        }
+
+        .team-avatar-img {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--secondary);
+            margin: 0 auto 1rem auto;
+            display: block;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-card h3 {
+            color: var(--primary);
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .team-id {
+            color: var(--secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .team-role {
+            color: #64748B;
+            font-size: 0.85rem;
+        }
+
+        /* Main Container & Interactive Tabs */
+        .main-container {
+            max-width: 1200px;
+            margin: 2rem auto 4rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .tab-contents {
+            margin-top: 1rem;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .kpi-title {
+            font-size: 0.95rem;
+            color: #1E293B;
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-sub {
+            font-size: 0.8rem;
+            color: #64748B;
+        }
+
+        /* Dashboard & Form Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .content-box {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .content-box h3 {
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        /* Model Comparison Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .model-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .model-table th, .model-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .model-table th {
+            background-color: #F8FAFC;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .model-table tr:hover {
+            background-color: #F1F5F9;
+        }
+
+        .highlight-row {
+            background-color: #ECFDF5 !important;
+        }
+
+        .highlight-acc {
+            color: #10B981;
+            font-weight: 700;
+        }
+
+        /* Prediction Form */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #F8FAFC;
+        }
+
+        .form-control:focus {
+            border-color: var(--secondary);
+            background-color: var(--white);
+        }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--secondary);
+            color: var(--white);
+            padding: 0.85rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background-color: #0369A1;
+        }
+
+        .predict-result {
+            margin-top: 1.5rem;
+            padding: 1.25rem;
+            border-radius: 8px;
+            background-color: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            display: none;
+        }
+
+        .predict-result.show {
+            display: block;
+        }
+
+        .result-level {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <nav class="top-bar">
+        <div class="nav-container">
+            <div class="logo">
+                ROAD ACCIDENT <span>ANALYSIS</span>
+            </div>
+            <ul class="nav-links">
+                <li><a onclick="switchTab('tab-home')" id="nav-home" class="active">หน้าหลัก</a></li>
+                <li><a onclick="switchTab('tab-overview')" id="nav-overview">สถานการณ์ 77 จังหวัด</a></li>
+                <li><a onclick="switchTab('tab-dashboard')" id="nav-dashboard">Dashboard & โมเดล</a></li>
+                <li><a onclick="switchTab('tab-predict')" id="nav-predict">ระบบพยากรณ์</a></li>
+                <li><a onclick="openTeamModal()">ผู้จัดทำ</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Header Title Section -->
+    <header id="home" class="hero-section">
+        <h1 class="hero-title">การวิเคราะห์ปัจจัยและการพยากรณ์ความรุนแรงของอุบัติเหตุทางถนนในประเทศไทย</h1>
+        <p class="hero-subtitle">Thailand Road Accident Factors Analysis & Severity Forecasting System (2018–2025)</p>
+    </header>
+
+    <!-- Modal ผู้จัดทำ -->
+    <div id="teamModal" class="modal-overlay" onclick="closeTeamModalOnOverlay(event)">
+        <div class="modal-container">
+            <button class="modal-close-btn" onclick="closeTeamModal()">&times;</button>
+            <h2 class="section-title">ผู้จัดทำ</h2>
+            <div class="team-modal-grid">
+                <div class="team-card">
+                    <img src="pakornkiat.jpg" alt="นาย ปกรณ์เกียรติ บริสุทธิ์" class="team-avatar-img" onerror="this.src='https://via.placeholder.com/90'">
+                    <h3>นาย ปกรณ์เกียรติ บริสุทธิ์</h3>
+                    <div class="team-id">66541207070-8</div>
+                    <div class="team-role">Web designer and data analyst.</div>
+                </div>
+                <div class="team-card">
+                    <img src="thammarak.jpg" alt="นายธรรมรักษ์ ธูปบูชา" class="team-avatar-img" onerror="this.src='https://via.placeholder.com/90'">
+                    <h3>นายธรรมรักษ์ ธูปบูชา</h3>
+                    <div class="team-id">66541207064-1</div>
+                    <div class="team-role">Data cleaner and data analyst.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <div class="tab-contents">
+
+            <!-- TAB 1: หน้าหลัก -->
+            <div id="tab-home" class="tab-panel active">
+                <section class="bg-problem-section">
+                    <div class="section-container">
+                        <h2 class="section-title">ที่มาและความสำคัญของปัญหา</h2>
+                        <div class="problem-grid">
+                            <div class="problem-card">
+                                <div class="problem-icon">🚨</div>
+                                <h3>วิเคราะห์สถิติอุบัติเหตุ (2018–2025)</h3>
+                                <p>ศึกษารวบรวมข้อมูลอุบัติเหตุทางถนนย้อนหลัง 8 ปี กว่า 3,567,766 รายการ ครอบคลุม 77 จังหวัดทั่วประเทศไทย</p>
+                            </div>
+                            <div class="problem-card">
+                                <div class="problem-icon">🔍</div>
+                                <h3>ปัจจัยเสี่ยงและพฤติกรรม</h3>
+                                <p>วิเคราะห์ความสัมพันธ์ระหว่างช่วงเวลา ประเภทยานพาหนะ และพฤติกรรมเสี่ยงเพื่อระบุปัจจัยที่มีผลต่อระดับความรุนแรงอย่างมีนัยสำคัญ</p>
+                            </div>
+                            <div class="problem-card">
+                                <div class="problem-icon">💡</div>
+                                <h3>การพยากรณ์ระดับความรุนแรง (Severity)</h3>
+                                <p>นำ Machine Learning มาจำแนกระดับความรุนแรงผู้บาดเจ็บเพื่อการจัดสรรทรัพยากรทางการแพทย์อย่างมีประสิทธิภาพ</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="objectives-section">
+                    <div class="section-container">
+                        <h2 class="section-title">วัตถุประสงค์ของโครงการ</h2>
+                        <div class="objectives-grid">
+                            <div class="obj-card">
+                                <div class="obj-number">01</div>
+                                <h3>วิเคราะห์ปัจจัยเสี่ยง</h3>
+                                <p>ศึกษาและระบุปัจจัยสำคัญที่มีผลต่อการเกิดความรุนแรงของอุบัติเหตุทางถนนในประเทศไทย</p>
+                            </div>
+                            <div class="obj-card">
+                                <div class="obj-number">02</div>
+                                <h3>พัฒนาโมเดลพยากรณ์</h3>
+                                <p>สร้างและฝึกฝนโมเดล Machine Learning หลากหลายอัลกอริทึมเพื่อคาดการณ์ระดับความรุนแรงของผู้บาดเจ็บ (Severity Levels)</p>
+                            </div>
+                            <div class="obj-card">
+                                <div class="obj-number">03</div>
+                                <h3>เปรียบเทียบประสิทธิภาพ</h3>
+                                <p>ประเมินและเปรียบเทียบประสิทธิภาพของแต่ละโมเดล (Accuracy, Precision, Recall, F1-Score) เพื่อค้นหาอัลกอริทึมที่แม่นยำที่สุด</p>
+                            </div>
+                            <div class="obj-card">
+                                <div class="obj-number">04</div>
+                                <h3>พัฒนาระบบแสดงผล</h3>
+                                <p>สร้าง Web Application เพื่อนำเสนอข้อมูลและผลการพยากรณ์ให้อยู่ในรูปแบบ Dashboard ที่ใช้งานง่ายและโต้ตอบได้เรียลไทม์</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="crisp-section">
+                    <div class="section-container">
+                        <h2 class="section-title">กระบวนการวิเคราะห์ข้อมูล (CRISP-DM Framework)</h2>
+                        <div class="crisp-grid">
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 1</span>
+                                <h3>Business Understanding</h3>
+                                <p>กำหนดเป้าหมายเพื่อศึกษาปัจจัยเสี่ยงและพยากรณ์ระดับความรุนแรงอุบัติเหตุทางถนนในประเทศไทย</p>
+                            </div>
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 2</span>
+                                <h3>Data Understanding</h3>
+                                <p>ทำ EDA ด้วย Histogram, Heatmap และ Boxplot ตรวจสอบการกระจายตัวและค่าที่ขาดหายของข้อมูล 3.5 ล้านรายการ</p>
+                            </div>
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 3</span>
+                                <h3>Data Preparation</h3>
+                                <p>ลบข้อมูลซ้ำ ทำ Feature Engineering แบ่งช่วงเวลา จัดกลุ่มอายุ และแปลงรหัสตัวแปรเชิงกลุ่ม (One-Hot Encoding)</p>
+                            </div>
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 4</span>
+                                <h3>Modeling</h3>
+                                <p>แบ่งข้อมูล Train 70% / Test 30% เพื่อทดสอบ 4 โมเดล: Logistic Regression, ANN, Random Forest และ SVM</p>
+                            </div>
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 5</span>
+                                <h3>Evaluation</h3>
+                                <p>วัดประสิทธิภาพของโมเดลด้วยค่า Accuracy, Precision, Recall, F1-Score และ Confusion Matrix</p>
+                            </div>
+                            <div class="crisp-card">
+                                <span class="crisp-step">ขั้นตอนที่ 6</span>
+                                <h3>Deployment</h3>
+                                <p>พัฒนา Web Application แสดงผล Dashboard และระบบประเมินความรุนแรงเรียลไทม์แก่ผู้ใช้งาน</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 2: สถานการณ์ 77 จังหวัด -->
+            <div id="tab-overview" class="tab-panel">
+                <div class="section-container">
+                    <h2 class="section-title">สัดส่วนระดับความรุนแรงของผู้บาดเจ็บ (Severity Levels)</h2>
+                    
+                    <div class="kpi-grid">
+                        <div class="kpi-card" style="border-top: 4px solid #E11D48;">
+                            <div class="kpi-title">ระดับความรุนแรง - รุนแรงมาก</div>
+                            <div class="kpi-value" id="kpi-sev4" style="color: #E11D48;">14%</div>
+                            <div class="kpi-sub">Staer 1, 6 (บาดเจ็บสาหัส / เสียชีวิต)</div>
+                        </div>
+                        <div class="kpi-card" style="border-top: 4px solid #EA580C;">
+                            <div class="kpi-title">ระดับความรุนแรง - ปานกลาง-สูง</div>
+                            <div class="kpi-value" id="kpi-sev3" style="color: #EA580C;">31%</div>
+                            <div class="kpi-sub">Staer 3 (บาดเจ็บปานกลางค่อนข้างสูง)</div>
+                        </div>
+                        <div class="kpi-card" style="border-top: 4px solid #D97706;">
+                            <div class="kpi-title">ระดับความรุนแรง - ปานกลาง</div>
+                            <div class="kpi-value" id="kpi-sev2" style="color: #D97706;">42%</div>
+                            <div class="kpi-sub">Staer 7 (บาดเจ็บเล็กน้อยถึงปานกลาง)</div>
+                        </div>
+                        <div class="kpi-card" style="border-top: 4px solid #059669;">
+                            <div class="kpi-title">ระดับความรุนแรง - ไม่รุนแรง</div>
+                            <div class="kpi-value" id="kpi-sev1" style="color: #059669;">13%</div>
+                            <div class="kpi-sub">Staer 2 (บาดเจ็บเล็กน้อย / เล็กน้อยมาก)</div>
+                        </div>
+                    </div>
+
+                    <div class="content-box">
+                        <h3>วิเคราะห์ปัจจัยสำคัญที่มีผลต่อความรุนแรง</h3>
+                        <p style="color: #475569; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                            จากการวิเคราะห์ด้วยเทคนิค Feature Importance พบว่าปัจจัยสำคัญที่มีผลต่อระดับความรุนแรงของอุบัติเหตุทางถนนอย่างมีนัยสำคัญ ได้แก่:
+                        </p>
+                        <ul style="padding-left: 1.5rem; color: #334155; line-height: 1.8;">
+                            <li><strong>ประเภทยานพาหนะ (Vehicle Type):</strong> รถจักรยานยนต์มีอัตราการบาดเจ็บระดับวิกฤต (รุนแรงมาก) สูงที่สุดคิดเป็น 68% ของเคสทั้งหมด</li>
+                            <li><strong>ช่วงเวลาที่เกิดเหตุ (Time of Day):</strong> ช่วงเวลาค่ำและดึก (18:00 - 06:00 น.) มีสัดส่วนความรุนแรงสูงกว่าช่วงอื่น</li>
+                            <li><strong>กลุ่มอายุผู้ประสบเหตุ (Age Group):</strong> ช่วงอายุวัยรุ่น (15-24 ปี) และผู้สูงอายุ มีความเสี่ยงต่อการเกิดความรุนแรงระดับสูง</li>
+                        </ul>
+                    </div>
+
+                    <div class="content-box">
+                        <h3>เลือกจังหวัดเพื่อดูสถิติเชิงพื้นที่ (แบ่งตามภูมิภาค)</h3>
+                        <div class="form-group" style="max-width: 400px;">
+                            <label>รายชื่อจังหวัด (ครบ 77 จังหวัด):</label>
+                            <select id="provinceSelector" class="form-control" onchange="updateProvinceData(this.value)">
+                                <optgroup label="ภาคกลาง">
+                                    <option value="กรุงเทพมหานคร" selected>กรุงเทพมหานคร</option>
+                                    <option value="กำแพงเพชร">กำแพงเพชร</option>
+                                    <option value="ชัยนาท">ชัยนาท</option>
+                                    <option value="นครนายก">นครนายก</option>
+                                    <option value="นครปฐม">นครปฐม</option>
+                                    <option value="นครสวรรค์">นครสวรรค์</option>
+                                    <option value="นนทบุรี">นนทบุรี</option>
+                                    <option value="ปทุมธานี">ปทุมธานี</option>
+                                    <option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option>
+                                    <option value="พิจิตร">พิจิตร</option>
+                                    <option value="พิษณุโลก">พิษณุโลก</option>
+                                    <option value="เพชรบูรณ์">เพชรบูรณ์</option>
+                                    <option value="ลพบุรี">ลพบุรี</option>
+                                    <option value="สมุทรปราการ">สมุทรปราการ</option>
+                                    <option value="สมุทรสงคราม">สมุทรสงคราม</option>
+                                    <option value="สมุทรสาคร">สมุทรสาคร</option>
+                                    <option value="สระบุรี">สระบุรี</option>
+                                    <option value="สิงห์บุรี">สิงห์บุรี</option>
+                                    <option value="สุโขทัย">สุโขทัย</option>
+                                    <option value="สุพรรณบุรี">สุพรรณบุรี</option>
+                                    <option value="อ่างทอง">อ่างทอง</option>
+                                    <option value="อุทัยธานี">อุทัยธานี</option>
+                                </optgroup>
+                                <optgroup label="ภาคเหนือ">
+                                    <option value="เชียงราย">เชียงราย</option>
+                                    <option value="เชียงใหม่">เชียงใหม่</option>
+                                    <option value="น่าน">น่าน</option>
+                                    <option value="พะเยา">พะเยา</option>
+                                    <option value="แพร่">แพร่</option>
+                                    <option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option>
+                                    <option value="ลำปาง">ลำปาง</option>
+                                    <option value="ลำพูน">ลำพูน</option>
+                                    <option value="อุตรดิตถ์">อุตรดิตถ์</option>
+                                </optgroup>
+                                <optgroup label="ภาคตะวันออกเฉียงเหนือ (อีสาน)">
+                                    <option value="กาฬสินธุ์">กาฬสินธุ์</option>
+                                    <option value="ขอนแก่น">ขอนแก่น</option>
+                                    <option value="ชัยภูมิ">ชัยภูมิ</option>
+                                    <option value="นครพนม">นครพนม</option>
+                                    <option value="นครราชสีมา">นครราชสีมา</option>
+                                    <option value="บึงกาฬ">บึงกาฬ</option>
+                                    <option value="บุรีรัมย์">บุรีรัมย์</option>
+                                    <option value="มหาสารคาม">มหาสารคาม</option>
+                                    <option value="มุกดาหาร">มุกดาหาร</option>
+                                    <option value="ยโสธร">ยโสธร</option>
+                                    <option value="ร้อยเอ็ด">ร้อยเอ็ด</option>
+                                    <option value="เลย">เลย</option>
+                                    <option value="ศรีสะเกษ">ศรีสะเกษ</option>
+                                    <option value="สกลนคร">สกลนคร</option>
+                                    <option value="สุรินทร์">สุรินทร์</option>
+                                    <option value="หนองคาย">หนองคาย</option>
+                                    <option value="หนองบัวลำภู">หนองบัวลำภู</option>
+                                    <option value="อุดรธานี">อุดรธานี</option>
+                                    <option value="อุบลราชธานี">อุบลราชธานี</option>
+                                    <option value="อำนาจเจริญ">อำนาจเจริญ</option>
+                                </optgroup>
+                                <optgroup label="ภาคตะวันออก">
+                                    <option value="จันทบุรี">จันทบุรี</option>
+                                    <option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option>
+                                    <option value="ชลบุรี">ชลบุรี</option>
+                                    <option value="ตราด">ตราด</option>
+                                    <option value="ปราจีนบุรี">ปราจีนบุรี</option>
+                                    <option value="ระยอง">ระยอง</option>
+                                    <option value="สระแก้ว">สระแก้ว</option>
+                                </optgroup>
+                                <optgroup label="ภาคตะวันตก">
+                                    <option value="กาญจนบุรี">กาญจนบุรี</option>
+                                    <option value="ตาก">ตาก</option>
+                                    <option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option>
+                                    <option value="เพชรบุรี">เพชรบุรี</option>
+                                    <option value="ราชบุรี">ราชบุรี</option>
+                                </optgroup>
+                                <optgroup label="ภาคใต้">
+                                    <option value="กระบี่">กระบี่</option>
+                                    <option value="ชุมพร">ชุมพร</option>
+                                    <option value="ตรัง">ตรัง</option>
+                                    <option value="นครศรีธรรมราช">นครศรีธรรมราช</option>
+                                    <option value="นราธิวาส">นราธิวาส</option>
+                                    <option value="ปัตตานี">ปัตตานี</option>
+                                    <option value="พังงา">พังงา</option>
+                                    <option value="พัทลุง">พัทลุง</option>
+                                    <option value="ภูเก็ต">ภูเก็ต</option>
+                                    <option value="ยะลา">ยะลา</option>
+                                    <option value="ระนอง">ระนอง</option>
+                                    <option value="สงขลา">สงขลา</option>
+                                    <option value="สตูล">สตูล</option>
+                                    <option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div id="provinceDetail" style="margin-top: 1rem; padding: 1rem; background: #F8FAFC; border-radius: 8px;">
+                            <p><strong>จังหวัดที่เลือก:</strong> <span id="selectedProvName">กรุงเทพมหานคร</span></p>
+                            <p><strong>สรุปสถานการณ์:</strong> <span id="selectedProvDesc">สถิติสะสมสูงที่สุดในประเทศ มักเกิดบนสายหลักและทางแยก ยานพาหนะหลักคือ รถจักรยานยนต์</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Dashboard -->
+            <div id="tab-dashboard" class="tab-panel">
+                <div class="section-container">
+                    <h2 class="section-title">Dashboard การวิเคราะห์และเปรียบเทียบโมเดล</h2>
+
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-title">จำนวนเคสทั้งหมด</div>
+                            <div class="kpi-value" style="color: var(--secondary);">3,567,766</div>
+                            <div class="kpi-sub">ข้อมูลเปิดภาครัฐ 77 จังหวัด</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-title">ช่วงเวลาเกิดเหตุสูงสุด</div>
+                            <div class="kpi-value" style="color: var(--accent);">18:00 - 22:00 น.</div>
+                            <div class="kpi-sub">ช่วงเวลาค่ำเสี่ยงสูง</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-title">โมเดลดีที่สุด</div>
+                            <div class="kpi-value" style="color: #10B981;">Logistic Regression</div>
+                            <div class="kpi-sub">Accuracy 66.63% / F1-Score 34.00%</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="content-box">
+                            <h3>สัดส่วนการเกิดอุบัติเหตุตามช่วงเวลา</h3>
+                            <div style="position: relative; width:100%; height: 300px;">
+                                <canvas id="timeChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="content-box">
+                            <h3>ตารางเปรียบเทียบประสิทธิภาพ Machine Learning (4 โมเดล)</h3>
+                            <div class="table-responsive">
+                                <table class="model-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Model Name</th>
+                                            <th>Accuracy</th>
+                                            <th>Precision</th>
+                                            <th>Recall</th>
+                                            <th>F1-Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="highlight-row">
+                                            <td><strong>Logistic Regression</strong></td>
+                                            <td class="highlight-acc">66.63%</td>
+                                            <td>39.99%</td>
+                                            <td>29.57%</td>
+                                            <td>34.00%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Neural Network (ANN)</strong></td>
+                                            <td>65.44%</td>
+                                            <td>30.43%</td>
+                                            <td>29.29%</td>
+                                            <td>29.85%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Random Forest</strong></td>
+                                            <td>65.08%</td>
+                                            <td>33.66%</td>
+                                            <td>26.78%</td>
+                                            <td>29.82%</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Support Vector Machine (SVM)</strong></td>
+                                            <td>64.99%</td>
+                                            <td>29.90%</td>
+                                            <td>29.09%</td>
+                                            <td>29.49%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ระบบพยากรณ์ -->
+            <div id="tab-predict" class="tab-panel">
+                <div class="section-container">
+                    <h2 class="section-title">ระบบพยากรณ์ระดับความรุนแรงอุบัติเหตุ (Deployment)</h2>
+                    
+                    <div class="content-box" style="max-width: 900px; margin: 0 auto 2rem auto;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin-bottom: 0;">ประเมินระดับความรุนแรง (Logistic Regression Model)</h3>
+                            <button type="button" onclick="loadPreset('high')" style="font-size: 0.8rem; padding: 0.3rem 0.6rem; border-radius: 4px; border: 1px solid var(--accent); background: #FFF1F2; color: var(--accent); cursor: pointer;">
+                                ⚡ สุ่มเคสเสี่ยงสูง
+                            </button>
+                        </div>
+
+                        <form id="predictionForm" onsubmit="handlePrediction(event)">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                                
+                                <div class="form-group">
+                                    <label>1. ช่วงเวลาที่เกิดเหตุ (4 ช่วงเวลา):</label>
+                                    <select id="timeRange" class="form-control" required>
+                                        <option value="">-- เลือกช่วงเวลา --</option>
+                                        <option value="morning">ช่วงเช้า (Morning): 06:00 - 11:59 น.</option>
+                                        <option value="afternoon">ช่วงกลางวัน หรือ บ่าย (Afternoon): 12:00 - 17:59 น.</option>
+                                        <option value="evening">ช่วงเย็น หรือ ค่ำ (Evening): 18:00 - 23:59 น.</option>
+                                        <option value="night">ช่วงดึก (Night): 00:00 - 05:59 น.</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>2. ฤดูกาล:</label>
+                                    <select id="season" class="form-control" required>
+                                        <option value="">-- เลือกฤดูกาล --</option>
+                                        <option value="summer">ฤดูร้อน</option>
+                                        <option value="rainy">ฤดูฝน</option>
+                                        <option value="winter">ฤดูหนาว</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>3. ช่วงอายุผู้ประสบเหตุ:</label>
+                                    <select id="ageGroup" class="form-control" required>
+                                        <option value="">-- เลือกช่วงอายุ --</option>
+                                        <option value="child">เด็ก (0 - 14 ปี)</option>
+                                        <option value="youth">วัยรุ่น (15 - 24 ปี)</option>
+                                        <option value="adult">วัยทำงาน (25 - 59 ปี)</option>
+                                        <option value="elderly">ผู้สูงอายุ (60 ปีขึ้นไป)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>4. ปัจจัยเสี่ยงร่วมเพิ่มเติม:</label>
+                                    <select id="riskFactor" class="form-control" required>
+                                        <option value="none">ไม่มี</option>
+                                        <option value="alcohol">ดื่มแล้วขับ</option>
+                                        <option value="speed">ขับรถเร็วเกินกำหนด</option>
+                                        <option value="no_seatbelt">ไม่คาดเข็มขัด / ไม่สวมหมวกนิรภัย</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>ประเภทยานพาหนะ:</label>
+                                    <select id="vehicleType" class="form-control" required>
+                                        <option value="motorcycle">รถจักรยานยนต์</option>
+                                        <option value="car">รถยนต์ส่วนบุคคล / รถเก๋ง</option>
+                                        <option value="pickup">รถกระบะ</option>
+                                        <option value="truck">รถบรรทุก / รถใหญ่</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>จังหวัดที่เกิดเหตุ (77 จังหวัด):</label>
+                                    <select id="province" class="form-control" required>
+                                        <optgroup label="ภาคกลาง">
+                                            <option value="กรุงเทพมหานคร" selected>กรุงเทพมหานคร</option>
+                                            <option value="กำแพงเพชร">กำแพงเพชร</option>
+                                            <option value="ชัยนาท">ชัยนาท</option>
+                                            <option value="นครนายก">นครนายก</option>
+                                            <option value="นครปฐม">นครปฐม</option>
+                                            <option value="นครสวรรค์">นครสวรรค์</option>
+                                            <option value="นนทบุรี">นนทบุรี</option>
+                                            <option value="ปทุมธานี">ปทุมธานี</option>
+                                            <option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option>
+                                            <option value="พิจิตร">พิจิตร</option>
+                                            <option value="พิษณุโลก">พิษณุโลก</option>
+                                            <option value="เพชรบูรณ์">เพชรบูรณ์</option>
+                                            <option value="ลพบุรี">ลพบุรี</option>
+                                            <option value="สมุทรปราการ">สมุทรปราการ</option>
+                                            <option value="สมุทรสงคราม">สมุทรสงคราม</option>
+                                            <option value="สมุทรสาคร">สมุทรสาคร</option>
+                                            <option value="สระบุรี">สระบุรี</option>
+                                            <option value="สิงห์บุรี">สิงห์บุรี</option>
+                                            <option value="สุโขทัย">สุโขทัย</option>
+                                            <option value="สุพรรณบุรี">สุพรรณบุรี</option>
+                                            <option value="อ่างทอง">อ่างทอง</option>
+                                            <option value="อุทัยธานี">อุทัยธานี</option>
+                                        </optgroup>
+                                        <optgroup label="ภาคเหนือ">
+                                            <option value="เชียงราย">เชียงราย</option>
+                                            <option value="เชียงใหม่">เชียงใหม่</option>
+                                            <option value="น่าน">น่าน</option>
+                                            <option value="พะเยา">พะเยา</option>
+                                            <option value="แพร่">แพร่</option>
+                                            <option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option>
+                                            <option value="ลำปาง">ลำปาง</option>
+                                            <option value="ลำพูน">ลำพูน</option>
+                                            <option value="อุตรดิตถ์">อุตรดิตถ์</option>
+                                        </optgroup>
+                                        <optgroup label="ภาคตะวันออกเฉียงเหนือ (อีสาน)">
+                                            <option value="กาฬสินธุ์">กาฬสินธุ์</option>
+                                            <option value="ขอนแก่น">ขอนแก่น</option>
+                                            <option value="ชัยภูมิ">ชัยภูมิ</option>
+                                            <option value="นครพนม">นครพนม</option>
+                                            <option value="นครราชสีมา">นครราชสีมา</option>
+                                            <option value="บึงกาฬ">บึงกาฬ</option>
+                                            <option value="บุรีรัมย์">บุรีรัมย์</option>
+                                            <option value="มหาสารคาม">มหาสารคาม</option>
+                                            <option value="มุกดาหาร">มุกดาหาร</option>
+                                            <option value="ยโสธร">ยโสธร</option>
+                                            <option value="ร้อยเอ็ด">ร้อยเอ็ด</option>
+                                            <option value="เลย">เลย</option>
+                                            <option value="ศรีสะเกษ">ศรีสะเกษ</option>
+                                            <option value="สกลนคร">สกลนคร</option>
+                                            <option value="สุรินทร์">สุรินทร์</option>
+                                            <option value="หนองคาย">หนองคาย</option>
+                                            <option value="หนองบัวลำภู">หนองบัวลำภู</option>
+                                            <option value="อุดรธานี">อุดรธานี</option>
+                                            <option value="อุบลราชธานี">อุบลราชธานี</option>
+                                            <option value="อำนาจเจริญ">อำนาจเจริญ</option>
+                                        </optgroup>
+                                        <optgroup label="ภาคตะวันออก">
+                                            <option value="จันทบุรี">จันทบุรี</option>
+                                            <option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option>
+                                            <option value="ชลบุรี">ชลบุรี</option>
+                                            <option value="ตราด">ตราด</option>
+                                            <option value="ปราจีนบุรี">ปราจีนบุรี</option>
+                                            <option value="ระยอง">ระยอง</option>
+                                            <option value="สระแก้ว">สระแก้ว</option>
+                                        </optgroup>
+                                        <optgroup label="ภาคตะวันตก">
+                                            <option value="กาญจนบุรี">กาญจนบุรี</option>
+                                            <option value="ตาก">ตาก</option>
+                                            <option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option>
+                                            <option value="เพชรบุรี">เพชรบุรี</option>
+                                            <option value="ราชบุรี">ราชบุรี</option>
+                                        </optgroup>
+                                        <optgroup label="ภาคใต้">
+                                            <option value="กระบี่">กระบี่</option>
+                                            <option value="ชุมพร">ชุมพร</option>
+                                            <option value="ตรัง">ตรัง</option>
+                                            <option value="นครศรีธรรมราช">นครศรีธรรมราช</option>
+                                            <option value="นราธิวาส">นราธิวาส</option>
+                                            <option value="ปัตตานี">ปัตตานี</option>
+                                            <option value="พังงา">พังงา</option>
+                                            <option value="พัทลุง">พัทลุง</option>
+                                            <option value="ภูเก็ต">ภูเก็ต</option>
+                                            <option value="ยะลา">ยะลา</option>
+                                            <option value="ระนอง">ระนอง</option>
+                                            <option value="สงขลา">สงขลา</option>
+                                            <option value="สตูล">สตูล</option>
+                                            <option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+
+                            </div>
+
+                            <button type="submit" class="submit-btn" style="margin-top: 1rem;">ประเมินระดับความรุนแรงเรียลไทม์</button>
+                        </form>
+
+                        <div id="predictResult" class="predict-result" style="text-align: left; padding: 1.5rem;">
+                            <div style="text-align: center; border-bottom: 1px solid #E2E8F0; padding-bottom: 1rem; margin-bottom: 1rem;">
+                                <div style="font-size: 0.85rem; color: #64748B;">ผลการพยากรณ์จากโมเดล Logistic Regression (Accuracy 66.63%)</div>
+                                <div id="resultText" class="result-level"></div>
+                            </div>
+
+                            <div style="margin-bottom: 1.25rem;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">การกระจายความน่าจะเป็น (Probability Breakdown):</div>
+                                
+                                <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                                    <span>ระดับ 4 (รุนแรงมาก/วิกฤต):</span>
+                                    <span id="probSev4Text">0%</span>
+                                </div>
+                                <div style="background: #E2E8F0; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 0.6rem;">
+                                    <div id="probSev4Bar" style="background: #E11D48; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
+                                </div>
+
+                                <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                                    <span>ระดับ 3 (ปานกลาง-สูง):</span>
+                                    <span id="probSev3Text">0%</span>
+                                </div>
+                                <div style="background: #E2E8F0; border-radius: 4px; height: 8px; overflow: hidden; margin-bottom: 0.6rem;">
+                                    <div id="probSev3Bar" style="background: #EA580C; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
+                                </div>
+
+                                <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                                    <span>ระดับ 1-2 (ปานกลาง / เล็กน้อย):</span>
+                                    <span id="probSev12Text">0%</span>
+                                </div>
+                                <div style="background: #E2E8F0; border-radius: 4px; height: 8px; overflow: hidden;">
+                                    <div id="probSev12Bar" style="background: #059669; width: 0%; height: 100%; transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <div style="background: #FFFFFF; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--secondary);">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--primary);">ข้อเสนอแนะสำหรับการรับมือ (Actionable Advice):</div>
+                                <div id="resultDesc" style="font-size: 0.85rem; color: #475569; margin-top: 0.25rem; line-height: 1.6;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- กราฟเส้นแสดงระดับความรุนแรงตามปัจจัย (ปรับเอาสภาพแสงออกแล้ว) -->
+                    <div class="content-box" style="max-width: 900px; margin: 0 auto;">
+                        <h3>📈 กราฟเส้นแสดงแนวโน้มระดับความรุนแรงเฉลี่ยแยกตามปัจจัยเสี่ยง (Factor Severity Levels)</h3>
+                        <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.25rem;">
+                            เปรียบเทียบค่าความรุนแรงเฉลี่ย (Score Level 1-4) ในแต่ละเงื่อนไขของตัวแปร เพื่อดูแนวโน้มว่าปัจจัยใดมีผลกระทบให้เกิดความรุนแรงสูงที่สุด
+                        </p>
+                        <div style="position: relative; width:100%; height: 350px;">
+                            <canvas id="factorLineChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- JavaScript Handling -->
+    <script>
+        let myChart = null; // ตัวแปรเก็บกราฟแท่ง
+        let lineChart = null; // ตัวแปรเก็บกราฟเส้น
+
+        // ข้อมูลตัวอย่างสถิติจังหวัดครบ 77 จังหวัด
+        const provinceStats = {
+            // ภาคกลาง
+            "กรุงเทพมหานคร": { sev4: "14%", sev3: "31%", sev2: "42%", sev1: "13%", desc: "สถิติสะสมสูงที่สุดในประเทศ มักเกิดบนสายหลักและทางแยก ยานพาหนะหลักคือ รถจักรยานยนต์" },
+            "กำแพงเพชร": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "มักเกิดบนทางหลวงสายหลัก ปัจจัยเสี่ยงคือการใช้ความเร็วและการง่วงเหงาหาวนอน" },
+            "ชัยนาท": { sev4: "15%", sev3: "32%", sev2: "41%", sev1: "12%", desc: "อุบัติเหตุส่วนใหญ่เกิดบริเวณทางแยกและจุดกลับรถบนถนนสายหลัก" },
+            "นครนายก": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เสี่ยงสูงช่วงวันหยุดตามเส้นทางท่องเที่ยวและทางโค้งคดเคี้ยว" },
+            "นครปฐม": { sev4: "15%", sev3: "31%", sev2: "41%", sev1: "13%", desc: "สถิติมักเกิดบริเวณถนนเพชรเกษมและเส้นทางเชื่อมต่อปริมณฑล" },
+            "นครสวรรค์": { sev4: "17%", sev3: "33%", sev2: "38%", sev1: "12%", desc: "ประตูกลับสู่ภาคเหนือ มักเกิดอุบัติเหตุรุนแรงช่วงเทศกาลจากการหลับในและใช้ความเร็ว" },
+            "นนทบุรี": { sev4: "12%", sev3: "29%", sev2: "45%", sev1: "14%", desc: "อุบัติเหตุหนาแน่นในเขตเมืองและถนนวงแหวน การบาดเจ็บส่วนใหญ่เป็นระดับปานกลาง" },
+            "ปทุมธานี": { sev4: "15%", sev3: "30%", sev2: "41%", sev1: "14%", desc: "เสี่ยงสูงบริเวณถนนพหลโยธินและทางหลวงเชื่อมต่อ รถบรรทุกมีสัดส่วนร่วมเกิดเหตุสูง" },
+            "พระนครศรีอยุธยา": { sev4: "16%", sev3: "32%", sev2: "39%", sev1: "13%", desc: "หนาแน่นช่วงเทศกาลบนถนนสายหลักและจุดตัดทางแยกเข้าเขตเมืองเก่า" },
+            "พิจิตร": { sev4: "15%", sev3: "33%", sev2: "40%", sev1: "12%", desc: "มักเกิดบนถนนสายรองระหว่างอำเภอและพื้นที่เกษตรกรรม" },
+            "พิษณุโลก": { sev4: "16%", sev3: "32%", sev2: "40%", sev1: "12%", desc: "จุดเสี่ยงมักเป็นทางแยกเชื่อมต่อระหว่างจังหวัด อุบัติเหตุส่วนใหญ่เกิดช่วงค่ำ" },
+            "เพชรบูรณ์": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงบริเวณทางลาดชันลงเขา (เขาค้อ/ภูทับเบิก) ในช่วงฤดูท่องเที่ยว" },
+            "ลพบุรี": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "เกิดเหตุบ่อยบนถนนสายหลักเชื่อมต่อภาคอีสาน ปัจจัยเสี่ยงคือความเร็ว" },
+            "สมุทรปราการ": { sev4: "13%", sev3: "31%", sev2: "43%", sev1: "13%", desc: "เกิดเหตุบ่อยในเขตอุตสาหกรรมและถนนสายหลัก รถจักรยานยนต์เป็นยานพาหนะหลัก" },
+            "สมุทรสงคราม": { sev4: "14%", sev3: "31%", sev2: "42%", sev1: "13%", desc: "อุบัติเหตุหนาแน่นบริเวณถนนพระราม 2 และทางแยกเข้าชุมชน" },
+            "สมุทรสาคร": { sev4: "14%", sev3: "32%", sev2: "41%", sev1: "13%", desc: "เสี่ยงสูงบนเส้นทางขนส่งสินค้าและเขตอุตสาหกรรมช่วงเวลาเร่งด่วน" },
+            "สระบุรี": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "จุดเชื่อมต่อภาคอีสาน การจราจรหนาแน่นและมีสัดส่วนรถใหญ่ร่วมเกิดเหตุสูง" },
+            "สิงห์บุรี": { sev4: "15%", sev3: "32%", sev2: "41%", sev1: "12%", desc: "มักเกิดบนถนนสายเอเชียจากการใช้ความเร็วและการตัดหน้ากระชั้นชิด" },
+            "สุโขทัย": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "เกิดเหตุบ่อยบนถนนเชื่อมต่อระหว่างอำเภอ ปัจจัยเสี่ยงคือสภาพแสงมืดช่วงดึก" },
+            "สุพรรณบุรี": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "ถนนตรงสายหลักมักเกิดอุบัติเหตุจากการใช้ความเร็วสูงเกินกำหนด" },
+            "อ่างทอง": { sev4: "15%", sev3: "32%", sev2: "41%", sev1: "12%", desc: "เกิดเหตุบ่อยตามจุดกลับรถและทางแยกเลียบคลองชลประทาน" },
+            "อุทัยธานี": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "มักเกิดอุบัติเหตุในพื้นที่สายรองและทางโค้งคดเคี้ยวชายเขา" },
+
+            // ภาคเหนือ
+            "เชียงราย": { sev4: "19%", sev3: "34%", sev2: "35%", sev1: "12%", desc: "มักเกิดเหตุช่วงกลางคืนบนถนนไม่มีไฟส่องทาง ปัจจัยเสี่ยงหลักคือขับรถเร็วเกินกำหนด" },
+            "เชียงใหม่": { sev4: "18%", sev3: "35%", sev2: "37%", sev1: "10%", desc: "เสี่ยงสูงบริเวณทางโค้งลงเขาและเส้นทางสายท่องเที่ยว อัตราการบาดเจ็บรุนแรงสูงในฤดูหนาว" },
+            "น่าน": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "อุบัติเหตุเกิดบนเส้นทางลาดชัน ลาดโค้งตามแนวเขาและทัศนวิสัยจำกัด" },
+            "พะเยา": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "จุดเสี่ยงอยู่บนทางหลวงสายหลักและถนนเลียบลุ่มน้ำ" },
+            "แพร่": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดช่วงทางโค้งเขาขุนตานและทางสายหลักเชื่อมต่อไปเชียงราย" },
+            "แม่ฮ่องสอน": { sev4: "20%", sev3: "36%", sev2: "33%", sev1: "11%", desc: "ภูมิประเทศเป็นภูเขาสูง ทางโค้งแคบ สถิติความรุนแรงต่อเคสค่อนข้างสูง" },
+            "ลำปาง": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เกิดเหตุบ่อยบริเวณทางเขาขุนตานและช่วงจุดกลับรถบนถนนพหลโยธิน" },
+            "ลำพูน": { sev4: "15%", sev3: "32%", sev2: "41%", sev1: "12%", desc: "หนาแน่นในเขตเมืองและพื้นที่ย่านนิคมอุตสาหกรรม ยานพาหนะหลักคือจักรยานยนต์" },
+            "อุตรดิตถ์": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เสี่ยงสูงช่วงทางเขาเขาพลึงและเส้นทางเชื่อมต่อภาคเหนือตอนบน" },
+
+            // ภาคตะวันออกเฉียงเหนือ
+            "กาฬสินธุ์": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดบนถนนเชื่อมต่อระหว่างอำเภอ ปัจจัยร่วมคือการไม่สวมหมวกนิรภัย" },
+            "ขอนแก่น": { sev4: "17%", sev3: "33%", sev2: "38%", sev1: "12%", desc: "มักเกิดอุบัติเหตุช่วงดึกบริเวณถนนสายรองและจุดกลับรถ เลนกลาง" },
+            "ชัยภูมิ": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เกิดเหตุบ่อยบริเวณเส้นทางสายรองและทางโค้งลาดเชิงเขา" },
+            "นครพนม": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "อุบัติเหตุสถิติสูงช่วงเทศกาลเลียบชายแม่น้ำโขงและจุดกลับรถ" },
+            "นครราชสีมา": { sev4: "21%", sev3: "36%", sev2: "32%", sev1: "11%", desc: "เสี่ยงสูงมากช่วงเทศกาลบนถนนมิตรภาพและทางโค้งเขาใหญ่/ต่างระดับ" },
+            "บึงกาฬ": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เกิดเหตุบ่อยบนถนนเลียบชายแดน สภาพแสงมืดช่วงกลางคืนเป็นปัจจัยเสี่ยง" },
+            "บุรีรัมย์": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "สถิติสูงช่วงงานเทศกาลและถนนสายหลักเชื่อมต่อภาคอีสานใต้" },
+            "มหาสารคาม": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "หนาแน่นในเขตย่านสถานศึกษาและเส้นทางเชื่อมต่ออำเภอเมือง" },
+            "มุกดาหาร": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "อุบัติเหตุเกิดบ่อยบนเส้นทางขนส่งชายแดนและถนนสายรอง" },
+            "ยโสธร": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดอุบัติเหตุบนถนนเชื่อมต่อหมู่บ้านและไร่นา" },
+            "ร้อยเอ็ด": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "จุดเสี่ยงอยู่บริเวณทางแยกตัดใหม่และถนนเลี่ยงเมือง" },
+            "เลย": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงบริเวณเส้นทางลาดชันภูเขาสูงและโค้งอันตรายช่วงฤดูหนาว" },
+            "ศรีสะเกษ": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "เกิดเหตุบ่อยช่วงค่ำถึงดึก ปัจจัยร่วมหลักคือดื่มแล้วขับ" },
+            "สกลนคร": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เสี่ยงสูงบริเวณทางโค้งภูพานและจุดกลับรถตามแนวสายหลัก" },
+            "สุรินทร์": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "มักเกิดอุบัติเหตุช่วงเทศกาลบนถนนสายรองและการขับขี่ข้ามเลน" },
+            "หนองคาย": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "หนาแน่นบริเวณเส้นทางเลียบแม่น้ำโขงและด่านชายแดน" },
+            "หนองบัวลำภู": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดอุบัติเหตุบนถนนสายรองและช่วงทางโค้งอันตราย" },
+            "อุดรธานี": { sev4: "16%", sev3: "34%", sev2: "37%", sev1: "13%", desc: "เกิดอุบัติเหตุบ่อยบนถนนเลี่ยงเมือง สภาพแสงช่วงกลางคืนเป็นปัจจัยเสี่ยงสำคัญ" },
+            "อุบลราชธานี": { sev4: "18%", sev3: "35%", sev2: "36%", sev1: "11%", desc: "ปัจจัยเสี่ยงร่วมสูงคือการดื่มแล้วขับและไม่สวมหมวกนิรภัยในพื้นที่อำเภอรอบนอก" },
+            "อำนาจเจริญ": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "สถิติมักเกิดบนถนนสายหลักเชื่อมต่ออุบลราชธานีและทางแยกไร้สัญญาณไฟ" },
+
+            // ภาคตะวันออก
+            "จันทบุรี": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เสี่ยงสูงบนเส้นทางสายท่องเที่ยวและช่วงฤดูฝนถนนลื่น" },
+            "ฉะเชิงเทรา": { sev4: "17%", sev3: "33%", sev2: "38%", sev1: "12%", desc: "อุบัติเหตุหนาแน่นบริเวณถนนสุวินทวงศ์และเส้นทางขนส่งสินค้า" },
+            "ชลบุรี": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "ปริมาณอุบัติเหตุสูงบริเวณมอเตอร์เวย์ เขตพัทยา และถนนย่านอุตสาหกรรม" },
+            "ตราด": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดบนเส้นทางเลียบชายทะเลและเส้นทางไปท่าเรือท่องเที่ยว" },
+            "ปราจีนบุรี": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "เสี่ยงสูงบริเวณทางเขาเชื่อมต่อสระแก้ว (ถนนสาย 304) รถใหญ่มีสัดส่วนสูง" },
+            "ระยอง": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "เกิดเหตุบ่อยในเขตเมือง ย่านนิคมอุตสาหกรรม และถนนสุขุมวิท" },
+            "สระแก้ว": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "มักเกิดบนทางหลวงสายหลักเชื่อมต่อชายแดนและการใช้ความเร็วสูง" },
+
+            // ภาคตะวันตก
+            "กาญจนบุรี": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงบริเวณทางโค้งลาดชันตามแหล่งท่องเที่ยวธรรมชาติและเขื่อน" },
+            "ตาก": { sev4: "20%", sev3: "35%", sev2: "33%", sev1: "12%", desc: "เสี่ยงสูงมากช่วงเส้นทางเขาดอยรวก/แม่สอด ทางโค้งลาดชันคดเคี้ยว" },
+            "ประจวบคีรีขันธ์": { sev4: "18%", sev3: "34%", sev2: "36%", sev1: "12%", desc: "เกิดเหตุบ่อยบนถนนเพชรเกษมสายยาว มักเกิดจากการง่วงและหลับใน" },
+            "เพชรบุรี": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "สถิติสูงช่วงวันหยุดยาวบนถนนสายหลักลงใต้และทางเข้าเมืองหัวหิน" },
+            "ราชบุรี": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "มักเกิดบนถนนสายหลักเชื่อมต่อภาคใต้และจุดตัดทางแยกเข้าชุมชน" },
+
+            // ภาคใต้
+            "กระบี่": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงบนเส้นทางท่องเที่ยวสายหลัก รถจักรยานยนต์ของนักท่องเที่ยวเกิดเหตุบ่อย" },
+            "ชุมพร": { sev4: "19%", sev3: "35%", sev2: "34%", sev1: "12%", desc: "ประตูสู่ภาคใต้ ถนนสายยาวมักเกิดอุบัติเหตุร้ายแรงจากการง่วงหลับใน" },
+            "ตรัง": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เกิดเหตุบ่อยช่วงฤดูฝนเนื่องจากทัศนวิสัยต่ำและถนนลื่น" },
+            "นครศรีธรรมราช": { sev4: "19%", sev3: "34%", sev2: "35%", sev1: "12%", desc: "มักเกิดอุบัติเหตุช่วงฤดูฝนเนื่องจากทัศนวิสัยต่ำและถนนลื่นตามแนวเขา" },
+            "นราธิวาส": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดบนถนนสายรองระหว่างอำเภอ ปัจจัยเสี่ยงคือสภาพแสงมืดช่วงดึก" },
+            "ปัตตานี": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "เกิดเหตุบ่อยบนถนนสายหลักเชื่อมต่อจังหวัดชายแดนใต้" },
+            "พังงา": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงบริเวณทางโค้งลงเขาและเส้นทางท่องเที่ยวเขาพลายดำ/เขาหลัก" },
+            "พัทลุง": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "มักเกิดบนถนนเพชรเกษมและจุดกลับรถบริเวณย่านชุมชน" },
+            "ภูเก็ต": { sev4: "15%", sev3: "38%", sev2: "36%", sev1: "11%", desc: "เสี่ยงสูงบริเวณทางโค้งคดเคี้ยวลงเขา รถจักรยานยนต์ของนักท่องเที่ยวเกิดเหตุบ่อยสุด" },
+            "ยะลา": { sev4: "17%", sev3: "34%", sev2: "37%", sev1: "12%", desc: "อุบัติเหตุส่วนใหญ่เกิดบนเส้นทางเขาคดเคี้ยวไปเบตง" },
+            "ระนอง": { sev4: "18%", sev3: "35%", sev2: "35%", sev1: "12%", desc: "เสี่ยงสูงช่วงฤดูฝนยาวนาน ถนนคดเคี้ยวตามแนวเขาลาดชัน" },
+            "สงขลา": { sev4: "17%", sev3: "32%", sev2: "39%", sev1: "12%", desc: "สถิติสูงในเขตเมืองหาดใหญ่และเส้นทางเชื่อมต่อชายแดน ยานพาหนะหลักคือจักรยานยนต์" },
+            "สตูล": { sev4: "16%", sev3: "33%", sev2: "39%", sev1: "12%", desc: "มักเกิดอุบัติเหตุบนถนนสายรองเชื่อมต่อท่าเรือและแหล่งท่องเที่ยว" },
+            "สุราษฎร์ธานี": { sev4: "20%", sev3: "35%", sev2: "34%", sev1: "11%", desc: "เสี่ยงสูงบนเส้นทางสายหลักลงใต้และเส้นทางท่องเที่ยวเกาะ ฤดูฝนถนนลื่นเป็นปัจจัยหลัก" }
+        };
+
+        // สลับ Tab
+        function switchTab(tabId) {
+            const panels = document.querySelectorAll('.tab-panel');
+            panels.forEach(panel => panel.classList.remove('active'));
+
+            const links = document.querySelectorAll('.nav-links a');
+            links.forEach(link => link.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            
+            const activeNavMap = {
+                'tab-home': 'nav-home',
+                'tab-overview': 'nav-overview',
+                'tab-dashboard': 'nav-dashboard',
+                'tab-predict': 'nav-predict'
+            };
+            
+            if (activeNavMap[tabId]) {
+                document.getElementById(activeNavMap[tabId]).classList.add('active');
+            }
+
+            // Render/Resize กราฟ Dashboard เมื่อเปิดมา Tab Dashboard
+            if (tabId === 'tab-dashboard') {
+                setTimeout(() => {
+                    if (!myChart) {
+                        initChart();
+                    } else {
+                        myChart.resize();
+                        myChart.update();
+                    }
+                }, 100);
+            }
+
+            // Render/Resize กราฟเส้น เมื่อเปิดมา Tab ระบบพยากรณ์
+            if (tabId === 'tab-predict') {
+                setTimeout(() => {
+                    if (!lineChart) {
+                        initLineChart();
+                    } else {
+                        lineChart.resize();
+                        lineChart.update();
+                    }
+                }, 100);
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Modal Logic
+        function openTeamModal() {
+            document.getElementById('teamModal').classList.add('show');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.remove('show');
+        }
+
+        function closeTeamModalOnOverlay(event) {
+            if (event.target === document.getElementById('teamModal')) {
+                closeTeamModal();
+            }
+        }
+
+        // อัปเดตสถิติจังหวัด + อัปเดต KPI 4 กล่องด้านบน
+        function updateProvinceData(val) {
+            const data = provinceStats[val] || { sev4: "15%", sev3: "32%", sev2: "40%", sev1: "13%", desc: "มีสถิติการเกิดอุบัติเหตุตามมาตรฐานพื้นที่ทั่วไป" };
+            
+            document.getElementById('selectedProvName').innerText = val;
+            document.getElementById('selectedProvDesc').innerText = data.desc;
+            
+            document.getElementById('kpi-sev4').innerText = data.sev4;
+            document.getElementById('kpi-sev3').innerText = data.sev3;
+            document.getElementById('kpi-sev2').innerText = data.sev2;
+            document.getElementById('kpi-sev1').innerText = data.sev1;
+        }
+
+        // Quick Preset
+        function loadPreset(type) {
+            if (type === 'high') {
+                document.getElementById('timeRange').value = 'night';
+                document.getElementById('season').value = 'rainy';
+                document.getElementById('ageGroup').value = 'youth';
+                document.getElementById('riskFactor').value = 'alcohol';
+                document.getElementById('vehicleType').value = 'motorcycle';
+            }
+        }
+
+        // Prediction Logic
+        function handlePrediction(e) {
+            e.preventDefault();
+            
+            const time = document.getElementById('timeRange').value;
+            const season = document.getElementById('season').value;
+            const age = document.getElementById('ageGroup').value;
+            const risk = document.getElementById('riskFactor').value;
+            const vehicle = document.getElementById('vehicleType').value;
+
+            let score = 15;
+
+            // ค่าน้ำหนักคะแนนความเสี่ยงตาม 4 ช่วงเวลา
+            if (time === 'night') score += 25;          // ช่วงดึก (00:00 - 05:59 น.)
+            else if (time === 'evening') score += 18;    // ช่วงเย็น/ค่ำ (18:00 - 23:59 น.)
+            else if (time === 'afternoon') score += 10;  // ช่วงกลางวัน/บ่าย (12:00 - 17:59 น.)
+            else if (time === 'morning') score += 0;     // ช่วงเช้า (06:00 - 11:59 น.)
+
+            if (season === 'rainy') score += 15;
+
+            if (age === 'youth' || age === 'elderly') score += 15;
+
+            if (risk === 'alcohol') score += 25;
+            else if (risk === 'speed') score += 20;
+            else if (risk === 'no_seatbelt') score += 15;
+
+            if (vehicle === 'motorcycle') score += 20;
+
+            let pSev4 = Math.min(Math.max(score, 5), 88);
+            let pSev3 = Math.min(Math.max(Math.round((100 - pSev4) * 0.55), 10), 45);
+            let pSev12 = 100 - pSev4 - pSev3;
+
+            document.getElementById('probSev4Text').innerText = pSev4 + '%';
+            document.getElementById('probSev4Bar').style.width = pSev4 + '%';
+            
+            document.getElementById('probSev3Text').innerText = pSev3 + '%';
+            document.getElementById('probSev3Bar').style.width = pSev3 + '%';
+            
+            document.getElementById('probSev12Text').innerText = pSev12 + '%';
+            document.getElementById('probSev12Bar').style.width = pSev12 + '%';
+
+            const resultBox = document.getElementById('predictResult');
+            const resultText = document.getElementById('resultText');
+            const resultDesc = document.getElementById('resultDesc');
+
+            let level = "";
+            let color = "";
+            let desc = "";
+
+            if (pSev4 >= 60) {
+                level = "ระดับ 4 (รุนแรงมาก / วิกฤต)";
+                color = "#E11D48";
+                desc = "ความเสี่ยงสูงมากต่อการบาดเจ็บสาหัสหรือเสียชีวิต ควรส่งทีมกู้ชีพระดับสูง (ALS) พร้อมอุปกรณ์กู้ภัยเฉพาะทางเข้าช่วยเหลือทันที";
+            } else if (pSev4 >= 35 || pSev3 >= 40) {
+                level = "ระดับ 3 (ปานกลาง-สูง)";
+                color = "#EA580C";
+                desc = "มีความเสี่ยงต่อการเกิดบาดแผลรุนแรงหรือกระดูกหัก ควรจัดส่งทีมกู้ชีพ (BLS/ILS) เพื่อประเมินสัญญาณชีพและปฐมพยาบาลด่วน";
+            } else {
+                level = "ระดับ 1 - 2 (ปานกลาง / ไม่รุนแรง)";
+                color = "#059669";
+                desc = "ความรุนแรงต่ำ ส่วนใหญ่เป็นการบาดเจ็บเล็กน้อย ได้รับการดูแลจากชุดปฏิบัติการฉุกเฉินเบื้องต้น (FR) ในพื้นที่";
+            }
+
+            resultText.innerText = level;
+            resultText.style.color = color;
+            resultDesc.innerText = desc;
+            resultBox.classList.add('show');
+        }
+
+        // กราฟแท่ง Dashboard
+        function initChart() {
+            const ctx = document.getElementById('timeChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['เช้า (06-12น.)', 'บ่าย (12-18น.)', 'ค่ำ (18-22น.)', 'ดึก (22-06น.)'],
+                    datasets: [{
+                        label: 'จำนวนอุบัติเหตุ (เคส)',
+                        data: [820000, 990000, 1120000, 637766],
+                        backgroundColor: [
+                            '#0284C7',
+                            '#0284C7',
+                            '#E11D48',
+                            '#EA580C'
+                        ],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // กราฟเส้น หน้าพยากรณ์ (ปรับแกะป้ายกำกับสภาพแสงออกแล้ว)
+        function initLineChart() {
+            const ctxLine = document.getElementById('factorLineChart').getContext('2d');
+            lineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: ['ช่วงเช้า', 'ช่วงบ่าย', 'ช่วงเย็น', 'ช่วงดึก', 'ช่วงเทศกาล / ดื่มแล้วขับ'],
+                    datasets: [
+                        {
+                            label: 'ระดับความรุนแรง - รถจักรยานยนต์',
+                            data: [1.8, 2.3, 3.1, 3.8, 3.9],
+                            borderColor: '#E11D48',
+                            backgroundColor: 'rgba(225, 29, 72, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'ระดับความรุนแรง - รถยนต์ส่วนบุคคล',
+                            data: [1.2, 1.5, 2.1, 2.7, 3.2],
+                            borderColor: '#0284C7',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            tension: 0.3,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'ระดับความรุนแรง - รถบรรทุก/รถใหญ่',
+                            data: [2.0, 2.2, 2.8, 3.4, 3.7],
+                            borderColor: '#D97706',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Prompt', size: 12 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': Level ' + context.raw;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 1,
+                            max: 4,
+                            title: {
+                                display: true,
+                                text: 'ระดับความรุนแรง (1: ต่ำสุด -> 4: สูงสุด)'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'การจำแนกตามช่วงเวลาและปัจจัยเสี่ยง'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // เริ่มต้นการทำงานเมื่อโหลดหน้าเว็บ
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+        });
+    </script>
+</body>
+</html>
